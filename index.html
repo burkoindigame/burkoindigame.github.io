@@ -1,65 +1,87 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Предзаказ игры</title>
-    <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
-    <script type="text/javascript"
-            src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js">
-    </script>
+  <meta charset="UTF-8" />
+  <title>Предзаказ игры</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3/dist/web3.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
 <body>
-    <h1>Предзаказ вашей игры</h1>
-    <button id="preorderButton">Предзаказать за 1 доллар</button>
-    <div id="form" style="display:none;">
-        <input type="text" id="name" placeholder="Ваше имя" required>
-        <input type="email" id="email" placeholder="Ваш email" required>
-        <button id="submit">Отправить</button>
-    </div>
-    <script>
-        // Инициализация EmailJS
-        (function(){
-            emailjs.init({publicKey: "rp0sKAlvyGeosNICv"}); // Замените на ваш User ID
-        })();
+  <h1>Предзаказ вашей игры</h1>
+  <button id="payButton">Оплатить 0.0002385 ETH</button>
+  <div id="status"></div>
+  
+  <div id="form" style="display:none;">
+    <input type="text" id="name" placeholder="Ваше имя" required>
+    <input type="email" id="email" placeholder="Ваш email" required>
+    <button id="submit">Отправить</button>
+  </div>
 
-        const preorderButton = document.getElementById('preorderButton');
-        const form = document.getElementById('form');
-        const submitButton = document.getElementById('submit');
+  <script>
+    // Инициализация EmailJS
+    (function(){
+        emailjs.init({publicKey: "rp0sKAlvyGeosNICv"}); // Замените на ваш User ID
+    })();
 
-        preorderButton.onclick = async () => {
-            if (typeof window.ethereum !== 'undefined') {
-                const web3 = new Web3(window.ethereum);
-                await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const accounts = await web3.eth.getAccounts();
+    const payButton = document.getElementById('payButton');
+    const statusDiv = document.getElementById('status');
+    const form = document.getElementById('form');
+    const submitButton = document.getElementById('submit');
 
-                // Оплата 1 доллар в Wei (пример)
-                const price = web3.utils.toWei('1', 'ether');
+    async function payWithMetaMask() {
+      if (typeof window.ethereum === 'undefined') {
+        statusDiv.innerText = 'Пожалуйста, установите MetaMask!';
+        return;
+      }
 
-                // Здесь должен быть ваш контракт и функция для оплаты
-                // await contract.methods.pay().send({ from: accounts[0], value: price });
+      try {
+        // Запросить доступ к аккаунту
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const from = accounts[0];
 
-                form.style.display = 'block';
-            } else {
-                alert('Пожалуйста, установите MetaMask!');
-            }
-        };
+        // Адрес получателя (ваш кошелек)
+        const to = '0x4C28A84bBFE53BEB74418E0dfD36c5bca4b38614'; // Замените на ваш Ethereum-адрес
 
-        submitButton.onclick = async () => {
-            const name = document.getElementById('name').value;
-            const email = document.getElementById('email').value;
+        // Сумма в wei (0.0002385 ETH)
+        const amountEth = 0.0002385;
+        const valueWei = BigInt(Math.round(amountEth * 1e18)).toString(16);
 
-            // Отправка данных через EmailJS
-            emailjs.send('service_wlsifjm', 'template_ennh41a', {
-                name: name,
-                email: email
-            })
-            .then((response) => {
-                alert('Предзаказ успешно оформлен!');
-            }, (error) => {
-                alert('Ошибка при оформлении предзаказа: ' + JSON.stringify(error));
-            });
-        };
-    </script>
+        // Отправка транзакции
+        const txHash = await window.ethereum.request({
+          method: 'eth_sendTransaction',
+          params: [{
+            from,
+            to,
+            value: '0x' + valueWei,
+          }],
+        });
+
+        statusDiv.innerText = 'Транзакция отправлена. Хэш: ' + txHash;
+        
+        // Показать форму после успешной оплаты
+        form.style.display = 'block';
+      } catch (error) {
+        statusDiv.innerText = 'Ошибка: ' + error.message;
+      }
+    }
+
+    payButton.addEventListener('click', payWithMetaMask);
+
+    submitButton.onclick = async () => {
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+
+      // Отправка данных через EmailJS
+      emailjs.send('service_wlsifjm', 'template_ennh41a', {
+          name: name,
+          email: email
+      })
+      .then((response) => {
+          alert('Предзаказ успешно оформлен!');
+      }, (error) => {
+          alert('Ошибка при оформлении предзаказа: ' + JSON.stringify(error));
+      });
+    };
+  </script>
 </body>
-</html> 
+</html>
