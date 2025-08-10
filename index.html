@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Предзаказ игры</title>
+</head>
+<body>
+    <h1>Предзаказ вашей игры</h1>
+    <button id="preorderButton">Предзаказать за 1 доллар</button>
+    <div id="form" style="display: none; margin-top: 20px">
+        <input type="text" id="name" placeholder="Ваше имя" required />
+        <input type="email" id="email" placeholder="Ваш email" required />
+        <button id="submit">Отправить</button>
+    </div>
+
+    <script>
+        const preorderButton = document.getElementById("preorderButton");
+        const form = document.getElementById("form");
+        const submitButton = document.getElementById("submit");
+
+        const recipientAddress = "0x416bd32d772a6694a50B83Bd4028bfB0B5E49131";
+
+        preorderButton.onclick = async () => {
+            if (typeof window.ethereum !== "undefined") {
+                try {
+                    await window.ethereum.request({ method: "eth_requestAccounts" });
+                    const accounts = await window.ethereum.request({ method: "eth_accounts" });
+                    const sender = accounts[0];
+
+                    // Указываем сумму ETH, которую хотим отправить
+                    const ethAmount = "0.00024"; // 0.00024 ETH
+                    const valueInWei = (BigInt(ethAmount * 10 ** 18)).toString(); // Конвертация в wei
+
+                    console.log("Отправляемая сумма в wei:", valueInWei); // Логируем сумму для проверки
+
+                    const txParams = {
+                        from: sender,
+                        to: recipientAddress,
+                        value: valueInWei,
+                        gas: "21000", // Указываем газ
+                    };
+
+                    const txHash = await window.ethereum.request({
+                        method: "eth_sendTransaction",
+                        params: [txParams],
+                    });
+
+                    alert("Оплата отправлена! TxHash: " + txHash);
+                    form.style.display = "block";
+                    preorderButton.disabled = true;
+                    preorderButton.textContent = "Оплата выполнена";
+                } catch (error) {
+                    alert("Ошибка при оплате: " + (error.message || error));
+                }
+            } else {
+                alert("Пожалуйста, установите MetaMask!");
+            }
+        };
+
+        submitButton.onclick = async () => {
+            const name = document.getElementById("name").value.trim();
+            const email = document.getElementById("email").value.trim();
+
+            if (!name || !email) {
+                alert("Пожалуйста, заполните имя и email.");
+                return;
+            }
+
+            alert("Предзаказ успешно оформлен!");
+            form.style.display = "none";
+        };
+    </script>
+</body>
+</html>
